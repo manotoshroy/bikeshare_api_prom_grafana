@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s  # How often to scrape targets by default.
+
+scrape_configs:
+  - job_name: "bikeshare-api"  # Name of the job
+    static_configs:
+      - targets: ["bikeshare-api:8080"]  # Target your app running on port 8080
+        labels:
+          group: "bikeshare"  # Optional label to group metrics
+          env: "development"  # Optional label for environment

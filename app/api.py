@@ -8,6 +8,8 @@ from fastapi.encoders import jsonable_encoder
 from bikeshare_model import __version__ as model_version
 from bikeshare_model.predict import make_prediction
 
+from prometheus_client import Counter
+
 from app import __version__, schemas
 from app.config import settings
 
@@ -31,12 +33,24 @@ async def predict(input_data: schemas.MultipleDataInputs) -> Any:
     """
     Bike rental count prediction with the bikeshare_model
     """
+    
+    REQUEST_COUNT.labels(method="POST", endpoint="/predict", http_status=200).inc()
 
     input_df = pd.DataFrame(jsonable_encoder(input_data.inputs))
     
     results = make_prediction(input_data=input_df.replace({np.nan: None}))
 
     if results["errors"] is not None:
+        PREDICTION_ERRORS.inc()
         raise HTTPException(status_code=400, detail=json.loads(results["errors"]))
 
     return results
+
+# Prometheus metrics
+REQUEST_COUNT = Counter(
+    "api_requests_total", "Total number of requests", ["method", "endpoint", "http_status"]
+)
+
+PREDICTION_ERRORS = Counter(
+    "prediction_errors_total", "Total number of prediction errors"
+)
